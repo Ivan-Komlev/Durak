@@ -8,6 +8,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8C2E9560-3FC9-4925-9B9F-848147ABE987}"
 	ProjectSection(SolutionItems) = preProject
 		Card.py = Card.py
+		gameplay.py = gameplay.py
 		Table.py = Table.py
 	EndProjectSection
 EndProject

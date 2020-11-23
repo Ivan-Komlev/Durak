@@ -28,10 +28,15 @@ import arcade.gui
 from arcade.gui import UIManager
 
 from Table import Table
+from gameplay import gameplay
 
 if __name__ == '__main__':
-    theTable = Table()
+    theGame = gameplay()
+    theGame.newGame()
+
+    theTable = Table(theGame)
     theTable.setup()
+    
 
     arcade.run()
 
