@@ -35,3 +35,32 @@ class Card(arcade.Sprite):
     def is_face_down(self):
         """ Is this card face down? """
         return not self.is_face_up
+
+class Button(arcade.Sprite):
+    """ Button sprite """
+
+    def __init__(self, buttonImage1, buttonImage2):
+        """ Button constructor """
+        
+        self.buttonImage1 = buttonImage1
+        self.buttonImage2 = buttonImage2
+
+        # Image to use for the sprite when face up
+        self.image_file_name1 = f"src/{buttonImage1}"
+        self.image_file_name2 = f"src/{buttonImage2}"
+
+        super().__init__(self.image_file_name1, 1, False)
+
+    def buttonPress(self):
+        """ press button """
+        self.texture = arcade.load_texture(self.image_file_name2)
+        self.isPresse = True
+
+    def buttonRelease(self):
+        """ release button """
+        self.texture = arcade.load_texture(self.image_file_name1)
+        self.isPressed = False
+
+    @property
+    def isButtonPressed(self):
+        return self.isPressed
