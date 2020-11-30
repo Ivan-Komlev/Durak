@@ -42,7 +42,7 @@ TOP_Y = SCREEN_HEIGHT - MAT_HEIGHT / 2 - MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
 END_X = SCREEN_WIDTH - MAT_WIDTH / 2 - MAT_WIDTH * HORIZONTAL_MARGIN_PERCENT
 
 # The X of the middle row (game table)
-MIDDLE_X = SCREEN_WIDTH / 2 # - MAT_WIDTH - MAT_WIDTH * VERTICAL_MARGIN_PERCENT
+MIDDLE_X = SCREEN_WIDTH / 2 + MAT_WIDTH / 2 # - MAT_WIDTH - MAT_WIDTH * VERTICAL_MARGIN_PERCENT
 
 # The Y of the middle row
 MIDDLE_Y = SCREEN_HEIGHT / 2 - MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
@@ -53,7 +53,8 @@ Y_SPACING = MAT_HEIGHT + MAT_HEIGHT * VERTICAL_MARGIN_PERCENT
 
 # Card constants
 global CARD_VALUES, CARD_SUITS
-CARD_VALUES = ["6", "7", "8", "9", "10", "J", "Q", "K", "A"]
+#CARD_VALUES = ["6", "7", "8", "9", "10", "J", "Q", "K", "A"]
+CARD_VALUES = ["J", "Q", "K", "A"]
 CARD_SUITS = ["C", "H", "S", "D"] #["Clubs", "Hearts", "Spades", "Diamonds"]
 
 # If we fan out cards stacked on each other, how far apart to fan them?
@@ -67,8 +68,6 @@ BOTTOM_FACE_UP_PILE = 0
 
 class Table(arcade.Window):
     """ Main application class. """
-
-
 
     def __init__(self):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
@@ -101,6 +100,8 @@ class Table(arcade.Window):
 
         self.trumpSuit=""
 
+        self.gameInProgress = False
+
     def setupPiles(self):
 
         # List of cards we are dragging with the mouse
@@ -121,6 +122,7 @@ class Table(arcade.Window):
         pile.myCard=False
         pile.game=False
         self.pile_mat_list.append(pile)
+        self.piles.append([])
 
         # Create the mats for the bottom face down and face up piles
         pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
@@ -147,10 +149,10 @@ class Table(arcade.Window):
         card.face_up()
         self.trumpSuit = card.suit
 
-        cards=[]
-        cards.append(card)
+        #cards=[]
+        #cards.append(card)
 
-        self.piles.append(cards)
+        self.piles[BOTTOM_FACE_UP_PILE].append(card)
     
     def findEmptyPile(self,isEnemy,myCard):
 
@@ -159,7 +161,7 @@ class Table(arcade.Window):
                 return pile_no
 
         return -1
-        
+
     def pullCards(self,isEnemy,myCard):
 
         #check mats, add if needed
@@ -170,9 +172,10 @@ class Table(arcade.Window):
                 count += 1
 
         if count == 0:
+            numberOfMatsOnHand = 6
             for i in range(6):
                 pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
-                pile.position = START_X + i * X_SPACING, TOP_Y if isEnemy else BOTTOM_Y
+                pile.position = MIDDLE_X - (numberOfMatsOnHand * X_SPACING / 2 ) + i * X_SPACING, TOP_Y if isEnemy else BOTTOM_Y
                 pile.enemy=isEnemy
                 pile.myCard=myCard
                 pile.game=False
@@ -188,10 +191,7 @@ class Table(arcade.Window):
 
         for pile_no in range(len(self.piles)):
             if ((isEnemy and self.pile_mat_list[pile_no].enemy) or (myCard and self.pile_mat_list[pile_no].myCard)) and len(self.piles[pile_no])!=0:
-                print ("l=",len(self.piles[pile_no]))
                 count += 1
-
-        print("Cards in piles: ",count)
 
         for i in range(6):
             if count < 6:
@@ -220,14 +220,16 @@ class Table(arcade.Window):
 
                         count+=1
 
-
-    def get_numberOfattacks(self):
+    def isAllAttacksCompleted(self):
         numberOfattacks = 0
+        unfinishedAttackes=0
         for pile_no in range(len(self.pile_mat_list)):
-            if self.pile_mat_list[pile_no].game:
+            if self.pile_mat_list[pile_no].game and len(self.piles[pile_no])==2:
                 numberOfattacks += 1
+            elif self.pile_mat_list[pile_no].game and len(self.piles[pile_no])==1:
+                unfinishedAttackes += 1
 
-        return numberOfattacks
+        return numberOfattacks > 0 and unfinishedAttackes == 0
 
     def get_numberOfCompletedAttacks(self):
         numberOfattacks = 0
@@ -236,6 +238,22 @@ class Table(arcade.Window):
                 numberOfattacks += 1
 
         return numberOfattacks
+
+    def get_numberOfCardsOnTheTable(self):
+        numberOfattacks = 0
+        for pile_no in range(len(self.pile_mat_list)):
+            if self.pile_mat_list[pile_no].game:
+                numberOfattacks += len(self.piles[pile_no])
+                
+        return numberOfattacks
+
+    def get_numberOfAttackMats(self):
+        numberOfMats= 0
+        for pile_no in range(len(self.pile_mat_list)):
+            if self.pile_mat_list[pile_no].game:
+                numberOfMats += 1
+
+        return numberOfMats
 
     def takeCards(self,isEnemy,myCard):
 
@@ -280,21 +298,85 @@ class Table(arcade.Window):
                             cards[card_index].position = self.pile_mat_list[pile_no_to].position
                             self.move_card_to_new_pile(cards[card_index], pile_no_to)
 
+            self.centerPlayerCards(isEnemy,myCard)
+
             self.newTurn(False)
                 
+    def centerPlayerCards(self,isEnemy,myCard):
+
+        numberOfMatsOnHand = 0
+        for pile_no in range(len(self.pile_mat_list)):
+            pile=self.pile_mat_list[pile_no]
+            if (isEnemy and pile.enemy) or (myCard and pile.myCard):
+                numberOfMatsOnHand += 1
+                
+        #reposition mats - center allign them
+        i=0
+
+        custom_X_SPACING = X_SPACING
+        if numberOfMatsOnHand > 10:
+            custom_X_SPACING = custom_X_SPACING - (numberOfMatsOnHand - 10) * 2.5
+
+        for pile_no in range(len(self.pile_mat_list)):
+            pile=self.pile_mat_list[pile_no]
+            if (isEnemy and pile.enemy) or (myCard and pile.myCard):
+                pile.position = MIDDLE_X - (numberOfMatsOnHand * custom_X_SPACING / 2 ) + i * custom_X_SPACING, TOP_Y if isEnemy else BOTTOM_Y
+                
+                cards = self.piles[pile_no]
+
+                p=0
+                for card in cards:
+                    card.position = MIDDLE_X - (numberOfMatsOnHand * custom_X_SPACING / 2 ) + i * custom_X_SPACING, TOP_Y if isEnemy else BOTTOM_Y
+                    p += 1
+
+                i+=1
+
+
+    def orientButtons(self):
+
+        cardsOnTheTable = self.get_numberOfCardsOnTheTable()
+
+        if self.Attack == 0:
+            if cardsOnTheTable>0:
+                self.buttons[1].position = MIDDLE_X - 38, MIDDLE_Y - 150
+            else:
+                self.buttons[1].position = -1000, -1000
+
+
+            if self.isAllAttacksCompleted():
+                self.buttons[0].position = MIDDLE_X - 38, MIDDLE_Y + 150
+            else:
+                self.buttons[0].position = -1000, -1000
+
+        else:
+            if cardsOnTheTable>0:
+                self.buttons[1].position = MIDDLE_X - 38, MIDDLE_Y + 150
+            else:
+                self.buttons[1].position = -1000, -1000
+
+            if self.isAllAttacksCompleted():
+                self.buttons[0].position = MIDDLE_X - 38, MIDDLE_Y - 150
+            else:
+                self.buttons[0].position = -1000, -1000
             
                     
     def newMove(self):
-        numberOfattacks = self.get_numberOfattacks()
+
+        if self.checkForVictory():
+            return
+
+        numberOfCompleteAttacks = self.get_numberOfCompletedAttacks()
+        numberOfMats = self.get_numberOfAttackMats()
         
-        pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
-        pile.position = MIDDLE_X + (numberOfattacks - 1) * X_SPACING, MIDDLE_Y 
-        pile.enemy=False
-        pile.myCard=False
-        pile.game=True
-        self.pile_mat_list.append(pile)
-        cards=[]
-        self.piles.append(cards)
+        if numberOfMats == numberOfCompleteAttacks:
+            pile = arcade.SpriteSolidColor(MAT_WIDTH, MAT_HEIGHT, arcade.csscolor.DARK_OLIVE_GREEN)
+            pile.position = MIDDLE_X + (numberOfMats - 1) * X_SPACING, MIDDLE_Y 
+            pile.enemy=False
+            pile.myCard=False
+            pile.game=True
+            self.pile_mat_list.append(pile)
+            cards=[]
+            self.piles.append(cards)
 
         count = 0
         for pile_no in range(len(self.pile_mat_list)):
@@ -302,6 +384,7 @@ class Table(arcade.Window):
             if pile.game:
                 count +=1
         
+        #reposition mats - center allign them
         i=0
         for pile_no in range(len(self.pile_mat_list)):
             pile = self.pile_mat_list[pile_no]
@@ -318,8 +401,11 @@ class Table(arcade.Window):
 
                 i+=1
 
+        self.orientButtons()
+
         
     def newTurn(self,changeTheTurn=True):
+
         #move cards to the done pile
         pile=self.pile_mat_list[BOTTOM_FACE_DONE]
 
@@ -358,11 +444,76 @@ class Table(arcade.Window):
                 self.Attack=0
 
         self.Turn = self.Attack
+
+        self.orientButtons()
+        
+        self.checkForVictory()
     
+    def checkForVictory(self):
+
+        enemyCards = 0
+        for pile_no in range(len(self.pile_mat_list)):
+            pile = self.pile_mat_list[pile_no]
+            if pile.enemy:
+                enemyCards += len(self.piles[pile_no])
+
+        playerCards = 0
+        for pile_no in range(len(self.pile_mat_list)):
+            pile = self.pile_mat_list[pile_no]
+            if pile.myCard:
+                playerCards += len(self.piles[pile_no])
+
+        print ("enemyCards:",enemyCards)
+        print ("playerCards:",playerCards)
+
+        if enemyCards == 0 and playerCards!=0:
+            print ("Computer won!")
+            self.ui_manager.add_ui_element(arcade.gui.UILabel(
+                "Computer won!",
+                center_x=MIDDLE_X - 40,
+                center_y=MIDDLE_Y + 170,
+                width= 0,
+                align="center",
+                id=None,
+            ))
+
+            self.gameInProgress = False
+
+            button = Button('again.png', 'again_pressed.png')
+            button.position = MIDDLE_X - 38, MIDDLE_Y - 120
+            button.task="Start Over"
+            self.buttons[0]=button;
+            self.buttons[1].remove_from_sprite_lists()
+            
+
+            return True
+        elif playerCards == 0 and enemyCards != 0:
+            print ("You won!")
+
+            self.ui_manager.add_ui_element(arcade.gui.UILabel(
+                "You won!",
+                center_x=MIDDLE_X - 40,
+                center_y=MIDDLE_Y + 170,
+                width= 0,
+                align="center",
+                id=None,
+            ))
+
+            self.gameInProgress = False
+
+            button = Button('again.png', 'again_pressed.png')
+            button.position = MIDDLE_X - 38, MIDDLE_Y - 120
+            button.task="Start Over"
+            self.buttons[0]=button;
+            self.buttons[1].remove_from_sprite_lists()
+
+            return True
+
 
     def setup(self):
         """ Set up the game here. Call this function to restart the game. """
 
+        self.gameInProgress = True
         
         self.setupPiles()
 
@@ -373,7 +524,23 @@ class Table(arcade.Window):
         self.card_list = arcade.SpriteList()
         self.buttons = arcade.SpriteList()
 
-        
+
+        #buttons
+        button = Button('done.png', 'done_pressed.png')
+        button.position = MIDDLE_X - 38, MIDDLE_Y - 120
+        button.task="Done"
+        self.buttons.append(button);
+
+        button = Button('take.png', 'take_pressed.png')
+        button.position = MIDDLE_X - 38, MIDDLE_Y - 190
+        button.task="Take Cards"
+        self.buttons.append(button);
+
+        button = Button('help.png', 'help_pressed.png')
+        button.position = MIDDLE_X - 38, MIDDLE_Y + 100
+        button.task="Help"
+        self.buttons.append(button);
+
         # Create every card, will be nice to add some animation
         
         for card_suit in CARD_SUITS:
@@ -381,7 +548,7 @@ class Table(arcade.Window):
             for card_value in CARD_VALUES:
                 card = Card(card_suit, card_value, CARD_SCALE)
                 #card.position = START_X + xOffset, MIDDLE_Y - yOffset #bank cards
-                card.value = v 
+                card.weight = v 
 
                 self.card_list.append(card)
                 v+=1
@@ -409,10 +576,9 @@ class Table(arcade.Window):
             i += 1
 
         #Set Values
-                
         for card in self.card_list:
             if card.suit == self.trumpSuit:
-                card.value = card.value * 10
+                card.weight = card.weight * 10
 
         #Pull cards
 
@@ -428,30 +594,17 @@ class Table(arcade.Window):
         left_column_x = self.width // 2
         right_column_x = 3 * self.width // 4
 
-        # left side elements
-        self.ui_manager.add_ui_element(arcade.gui.UILabel(
-            SCREEN_TITLE,
-            center_x=MIDDLE_X - 40,
-            center_y=MIDDLE_Y + 200,
-        ))
+        self.newTurn(False)
 
-
-        #buttons
-        button = Button('take.png', 'take_pressed.png')
-        button.position = MIDDLE_X - 38, MIDDLE_Y - 120
-        button.task="Take Cards"
-        self.buttons.append(button);
-
-        button = Button('button.png', 'button.png')
-        button.position = MIDDLE_X - 38, MIDDLE_Y + 100
-        button.task="Help"
-        self.buttons.append(button);
-
+        arcade.draw_text(SCREEN_TITLE, MIDDLE_X - 40, MIDDLE_Y + 200, arcade.color.WHITE, 14)
 
     def on_draw(self):
         """ Render the screen. """
         # Clear the screen
         arcade.start_render()
+
+        # Draw buttons
+        self.buttons.draw()
 
         # Draw the mats the cards go on to
         self.pile_mat_list.draw()
@@ -459,9 +612,11 @@ class Table(arcade.Window):
         # Draw the cards
         self.card_list.draw()
 
+        # Draw labels
         self.ui_manager._ui_elements.draw()
 
-        self.buttons.draw()
+        
+
 
     def on_hide_view(self):
         self.ui_manager.unregister_handlers()
@@ -552,14 +707,49 @@ class Table(arcade.Window):
         self.remove_card_from_pile(card)
         self.piles[pile_index].append(card)
 
+    
+        
+        
     def checkTheMove(self,pile,pile_index):
 
         #is the pile complete
         if len(self.piles[pile_index]) == 2:
             return True
 
-        # Are there already cards there?
-        if self.Attack != self.Turn and len(self.piles[pile_index]) == 1:
+        # Are you attacking?
+        if self.Attack == self.Turn and len(self.piles[pile_index]) == 0:
+            #check if similar 
+            validMove = False
+            countCards = 0
+
+            dropped_card = self.held_cards[0]
+
+            for pile_no in range(len(self.pile_mat_list)):
+                if self.pile_mat_list[pile_no].game:
+                    cards = self.piles[pile_no]
+
+                    for card in cards:
+                        countCards += 1
+
+                        if dropped_card.value == card.value:
+                            validMove = True
+                            break
+
+            if countCards > 0 and not validMove:
+                return True #improper move
+
+
+            for i, dropped_card in enumerate(self.held_cards):
+                # Move cards to proper position
+                cardOffset =i * 6
+                dropped_card.position = pile.center_x + cardOffset, \
+                                                pile.center_y - CARD_VERTICAL_OFFSET * i - cardOffset
+
+                self.move_card_to_new_pile(dropped_card, pile_index)
+
+        elif self.Attack != self.Turn and len(self.piles[pile_index]) == 1: # Are you defending?
+
+
             # Move cards to proper position
             top_card = self.piles[pile_index][-1]
             for i, dropped_card in enumerate(self.held_cards):
@@ -569,12 +759,13 @@ class Table(arcade.Window):
             if dropped_card.suit != top_card.suit and dropped_card.suit != self.trumpSuit:
                 return True #improper move
 
-            if dropped_card.value < top_card.value:
+            if dropped_card.weight <= top_card.weight:
                 return True
 
             self.move_card_to_new_pile(dropped_card, pile_index)
 
-            if self.get_numberOfattacks() < 6:
+
+            if self.get_numberOfAttackMats() < 6:
                 #add game mat
                 self.newMove()
             
@@ -582,22 +773,14 @@ class Table(arcade.Window):
                 self.newTurn()
                 return False
 
-
-        elif self.Attack == self.Turn and len(self.piles[pile_index]) == 0:
-            # Are there no cards in the middle play pile?
-            for i, dropped_card in enumerate(self.held_cards):
-            # Move cards to proper position
-                cardOffset =i * 6
-                dropped_card.position = pile.center_x + cardOffset, \
-                                                pile.center_y - CARD_VERTICAL_OFFSET * i - cardOffset
-
-                self.move_card_to_new_pile(dropped_card, pile_index)
         else:
             return True
 
         self.Turn +=1
         if self.Turn==2:
             self.Turn=0
+
+        self.orientButtons()
 
         return False
 
@@ -608,9 +791,15 @@ class Table(arcade.Window):
         buttons = arcade.get_sprites_at_point((x, y), self.buttons)
         if len(buttons) > 0:
             button = buttons[-1]
-            print(button.task)
-            self.takeCards(self.Attack == 1, self.Attack == 0) # this is in revers - the defender may take cards
-
+            if button.isButtonPressed:
+                
+                if button.task == "Take Cards":
+                    self.takeCards(self.Attack == 1, self.Attack == 0) # this is in revers - the defender may take cards
+                elif button.task == "Done":
+                    if self.isAllAttacksCompleted():
+                        self.newTurn()
+                elif button.task == "Start Over":
+                    self.setup()
         
         for button in self.buttons:
             button.buttonRelease()
@@ -636,7 +825,6 @@ class Table(arcade.Window):
 
             # Is it on a middle play pile?
             elif self.pile_mat_list[pile_index].game:
-
                 reset_position = self.checkTheMove(pile,pile_index)
                 
         if reset_position:

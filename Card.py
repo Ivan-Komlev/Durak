@@ -7,12 +7,13 @@ FACE_DOWN_IMAGE = "src/red_back.png"
 class Card(arcade.Sprite):
     """ Card sprite """
 
-    def __init__(self, suit, value, scale=1):
+    def __init__(self, suit, value, scale=1, weight=0):
         """ Card constructor """
 
         # Attributes for suit and value
         self.suit = suit
         self.value = value
+        self.weight = weight
 
         # Image to use for the sprite when face up
         self.image_file_name = f"src/{self.value}{self.suit}.png"
@@ -44,17 +45,19 @@ class Button(arcade.Sprite):
         
         self.buttonImage1 = buttonImage1
         self.buttonImage2 = buttonImage2
-
+        
         # Image to use for the sprite when face up
         self.image_file_name1 = f"src/{buttonImage1}"
         self.image_file_name2 = f"src/{buttonImage2}"
+
+        self.isPressed = False
 
         super().__init__(self.image_file_name1, 1, False)
 
     def buttonPress(self):
         """ press button """
         self.texture = arcade.load_texture(self.image_file_name2)
-        self.isPresse = True
+        self.isPressed = True
 
     def buttonRelease(self):
         """ release button """
