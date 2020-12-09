@@ -1,0 +1,42 @@
+Durak is undoubtedly the most popular card game in Russia. "Durak" means fool, the fool in this game being the loser.
+
+A 36 card pack, the cards in each suit ranking from high to low: ace, king, queen, jack, 10, 9, 8, 7, 6.
+
+When a player's hand is reduced to fewer than six cards it is replenished from the talon of undealt cards. After the talon is exhausted,
+there is no more replenishment and the aim is to get rid of all the cards from your hand. The last player left holding cards is the loser.
+
+The dealer shuffles and deals out the cards face down to the players one at a time, clockwise, until everyone has a hand of six cards.
+The next card is placed face up in the centre of the table; its suit determines trumps.
+
+In the first hand of a session, the holder of the lowest trump plays first. One that has the smallest trump shows it to prove they are
+entitled to begin. The first play does not have to include the lowest trump - the holder of the lowest trump can begin with any card.
+In the second and subsequent hands of a session, the player to the left of the dealer begins the play.
+
+The attacker begins by playing any card from hand face up on the table in front of the defender. To beat off the attack the defender
+will have to beat this and all subsequent attacking cards. A card which is not a trump can be beaten by playing a higher card of 
+the same suit, or by any trump. A trump card can only be beaten by playing a higher trump. Note that a non-trump attack can always
+be beaten by a trump.
+
+Alternatively, if the defender cannot or does not wish to beat off the attack, the defender simply picks up
+the attack card, which then becomes part of the defender's hand; in this case the attack has succeeded.
+
+If the defender beats the first attack card, the attacker can continue the attack by playing another card.
+If the defender beats this second attack card too, the attack can be continued with further cards, subject to the following conditions:
+
+    each new attack card must be of the same rank as some card already played during the current bout - either an attack card or a card
+    played by the defender; the total number of cards played by the attackers during a bout must never exceed six;
+
+The defender succeeds in beating off the whole attack if either:
+
+    the defender has beaten all the attack cards, and none of the defender's opponents is able and willing to continue the attack;
+    the defender succeeds in beating six attacking cards;
+
+When an attack is beaten off, all the cards played during the bout (the attacking cards and the defender's cards) are thrown face down
+on a discard heap and are not used again during the play of this deal. The defender becomes the attacker for the next bout, and the player
+to the new attacker's left is the new defender.
+
+If at any stage, the defender is unable to or does not wish to beat one of the attack cards, the defender must pick up all the cards played
+during the bout - both the attacking cards and the cards used to beat them. All these cards become part of the defender's hand.
+
+The next attacker is the player to the left of the unsuccessful defender, and the new defender is the player
+to the left of the new attacker as usual.
