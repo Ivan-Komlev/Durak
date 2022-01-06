@@ -724,9 +724,17 @@ class Table(arcade.Window):
                 v+=1
 
         #Shuffle the cards
-        for pos1 in range(len(self.card_list)):
-            pos2 = random.randrange(len(self.card_list))
-            self.card_list[pos1], self.card_list[pos2] = self.card_list[pos2], self.card_list[pos1]
+
+        Shuffle_card_list = arcade.SpriteList()
+        taken = [];
+        while len(Shuffle_card_list) < len(self.card_list):
+            random_pos = random.randrange(len(self.card_list))
+            if not(random_pos in taken):
+                taken.append(random_pos)
+                Shuffle_card_list.append(self.card_list[random_pos])
+
+        self.card_list = Shuffle_card_list
+        #Shuffle_card_list.clear()
         
         # Put all the cards in the bottom face-down pile
         xOffset=0
